@@ -4,9 +4,11 @@
 
 import fs from "fs";
 import * as d3 from "d3";
-var inputFile = "./MFRED_Aggregates_15min_2019Q1-Q4.csv";
-var inputAGFile = "./ag_data.csv";
-var outputFile = "./processed_MFRED_Aggregates_hourly_2019Q1-Q4.csv";
+
+const inputFile = "./MFRED_Aggregates_15min_2019Q1-Q4.csv";
+const inputAGFile = "./ag_data.csv";
+const outputFile = "./processed_MFRED_Aggregates_";
+const resolution = 60;
 
 const agFileData = fs.readFileSync(inputAGFile, "utf8");
 const agData = d3.csvParse(agFileData, (d) => {
@@ -31,6 +33,9 @@ function timeOfDay(date) {
   result.setFullYear(1970);
   result.setMonth(0);
   result.setDate(1);
+  if (resolution === 60) {
+    result.setMinutes(0);
+  }
   return result;
 }
 
@@ -38,7 +43,7 @@ const fileData = fs.readFileSync(inputFile, "utf8");
 const data = d3.csvParse(fileData);
 const transposedData = [];
 data.forEach((d) => {
-  const DateTimeUTC = new Date(d.DateTimeUTC);
+  const DateTimeUTC = new Date(d.DateTimeUTC + "Z");
   const AGs01To26_kW = +d.AGs01To26_kW;
   const AGs01To26_kVAR = +d.AGs01To26_kVAR;
   const AGs01To26_kWh = +d.AGs01To26_kWh;
@@ -77,19 +82,20 @@ const summaryData = [];
 groupedData.forEach((AGValues, AGKey) => {
   AGValues.forEach((TODValues, TODKey) => {
     let e = {};
-    e["AGNo"] = AGKey;
-    e["timeOfDay"] = TODKey;
-    e["kWAvg"] = d3.mean(TODValues, (d) => d.kW);
-    e["kWMedian"] = d3.median(TODValues, (d) => d.kW);
-    e["kWMax"] = d3.max(TODValues, (d) => d.kW);
-    e["kWMin"] = d3.min(TODValues, (d) => d.kW);
+    e.resolution = resolution;
+    e.AGNo = AGKey;
+    e.timeOfDay = TODKey;
+    e.kWAvg = d3.mean(TODValues, (d) => d.kW);
+    e.kWMedian = d3.median(TODValues, (d) => d.kW);
+    e.kWMax = d3.max(TODValues, (d) => d.kW);
+    e.kWMin = d3.min(TODValues, (d) => d.kW);
     summaryData.push(e);
   });
 });
 
 const csv = d3.csvFormat(summaryData);
 
-fs.writeFile(outputFile, csv, function (err) {
+fs.writeFile(outputFile + resolution + ".csv", csv, function (err) {
   if (err) {
     console.log(err);
   } else {
