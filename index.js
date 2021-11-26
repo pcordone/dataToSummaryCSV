@@ -8,7 +8,7 @@ import * as d3 from "d3";
 const inputFile = "./MFRED_Aggregates_15min_2019Q1-Q4.csv";
 const inputAGFile = "./ag_data.csv";
 const outputFile = "./processed_MFRED_Aggregates_";
-const resolution = 60;
+const resolution = 15;
 
 const agFileData = fs.readFileSync(inputAGFile, "utf8");
 const agData = d3.csvParse(agFileData, (d) => {
@@ -85,20 +85,28 @@ groupedData.forEach((AGValues, AGKey) => {
     e.resolution = resolution;
     e.AGNo = AGKey;
     e.timeOfDay = TODKey;
+    // kW data
     e.kWAvg = d3.mean(TODValues, (d) => d.kW);
     e.kWMedian = d3.median(TODValues, (d) => d.kW);
-    e.kWMax = d3.max(TODValues, (d) => d.kW);
     e.kWMin = d3.min(TODValues, (d) => d.kW);
+    e.kWMax = d3.max(TODValues, (d) => d.kW);
+    // kVAR data
+    e.kVARAvg = d3.mean(TODValues, (d) => d.kVAR);
+    e.kVARMedian = d3.median(TODValues, (d) => d.kVAR);
+    e.kVARMin = d3.min(TODValues, (d) => d.kVAR);
+    e.kVARMax = d3.max(TODValues, (d) => d.kVAR);
+
     summaryData.push(e);
   });
 });
 
 const csv = d3.csvFormat(summaryData);
 
-fs.writeFile(outputFile + resolution + ".csv", csv, function (err) {
+const fullFilename = outputFile + resolution + ".csv";
+fs.writeFile(fullFilename, csv, function (err) {
   if (err) {
     console.log(err);
   } else {
-    console.log("Wrote '" + outputFile + "'!");
+    console.log("Wrote '" + fullFilename + "'!");
   }
 });
